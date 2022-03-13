@@ -3,7 +3,7 @@ import torchvision
 from torchvision import transforms
 from torchvision.datasets import CelebA
 
-def get_data_loader(args, split='train')
+def get_data_loader(args, split='train'):
     """
     Loads CelebA dataset from torchvision and applies proproccesing steps to it.
     Input: - args
