@@ -1,5 +1,13 @@
 #import sys
 #sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/')
+
+from comet_ml import Experiment
+experiment = Experiment(
+    api_key="KfIQxtLQwFBi7wahbWN9aCeav",
+    project_name="sk-fast-dnn-ensembles",
+    workspace="grebenkovao", log_code = False)
+
+
 import argparse
 import torch
 import torch.utils.data
@@ -155,6 +163,7 @@ def train_epoch(model, optimizer, train_loader, device, recon_function):
         optimizer.step()
         if not i % 1000:
             print('Train Batch {}/{}. Per-batch loss: {:.4f}\n'.format(i, len(train_loader), loss.item()))
+            experiment.log_metric(name = 'train_batch_loss', value = loss.item(), epoch=i)
             train_log.write('Train Batch {}/{}. Per-batch loss: {:.4f}\n'.format(i, len(train_loader), loss.item()))
     return train_loss / (len(train_loader))
 
@@ -172,10 +181,12 @@ def test(model, optimizer, test_loader, device, recon_function):
 def train(model, optimizer, train_loader, test_loader, epochs, device):
     for i in tqdm(range(epochs)):
         loss = train_epoch(model, optimizer, train_loader, device, recon_function)
+        experiment.log_metric(name = 'train_loss', value = loss, epoch=i)
         train_log.write('Train Epoch: {}. Average loss: {:.4f}\n'.format(i, loss))
         print('Train Epoch: {}. Average loss: {:.4f}\n'.format(i, loss))
         test_loss, image, recon_batch = test(model, optimizer, test_loader, device, recon_function)
         print('Test Epoch: {}. loss: {:.4f}\n'.format(i, test_loss))
+        experiment.log_metric(name = 'test_loss', value = test_loss, epoch=i)
         test_log.write('Test Epoch: {}. loss: {:.4f}\n'.format(i, test_loss))
         torchvision.utils.save_image(image[:8].data, f'./imgs/seed_{seed_value}/Seed_{seed_value}_epoch_{i}_data.jpg', nrow=8, padding=2)
         torchvision.utils.save_image(recon_batch[:8].data, f'./imgs/seed_{seed_value}/Seed_{seed_value}_epoch_{i}_recon.jpg', nrow=8, padding=2)
