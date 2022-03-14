@@ -1,6 +1,6 @@
 import torch
 import torchvision
-from torchvision import transforms
+from torchvision import transforms, datasets
 from torchvision.datasets import CelebA
 
 def get_data_loader(args, split='train'):
@@ -29,4 +29,27 @@ def get_data_loader(args, split='train'):
     loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_sz,
                                          shuffle=(split == 'train'), num_workers=args.num_workers)
     return loader
+
+def get_celeba(batch_size):
+    """
+    Loads the dataset and applies proproccesing steps to it.
+    Returns a PyTorch DataLoader.
+    """
+    # Data proprecessing.
+    transform = transforms.Compose([
+        transforms.Resize(64),
+        transforms.CenterCrop(64),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5),
+            (0.5, 0.5, 0.5))])
+
+    # Create the dataset.
+    dataset = datasets.ImageFolder(root=root, transform=transform)
+    train_set, test_set = torch.utils.data.random_split(dataset, [int(len(dataset)*0.8), len(dataset)-int(len(dataset)*0.8)])
+    # Create the dataloader.
+
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
+
+    return train_loader, test_loader
 
