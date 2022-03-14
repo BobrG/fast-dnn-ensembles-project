@@ -30,7 +30,7 @@ def get_data_loader(args, split='train'):
                                          shuffle=(split == 'train'), num_workers=args.num_workers)
     return loader
 
-def get_celeba(batch_size):
+def get_celeba(root, batch_size):
     """
     Loads the dataset and applies proproccesing steps to it.
     Returns a PyTorch DataLoader.

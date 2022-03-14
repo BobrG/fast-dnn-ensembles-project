@@ -5,14 +5,18 @@ import numpy as np
 class AE(nn.Module):
     def __init__(self, num_channels, encoder_features, decoder_features, bottleneck = 128):
         super(AE, self).__init__()
+        self.encoder_blocks = []
+        self.decoder_blocks = []
 
         # encoder
-        self.encoder_blocks.append(self.conv_block(num_channels, encoder_features))
+        self.encoder_blocks += self.conv_block(num_channels, encoder_features)
         
         encoder_levels = [1, 2, 4, 8, 8]
         for i, step in enumerate(encoder_levels[1:]):
-            self.encoder_blocks.append(self.conv_block(levels[i-1]*encoder_features, step*encoder_features))
+            self.encoder_blocks += self.conv_block(encoder_levels[i-1]*encoder_features, step*encoder_features)
         
+        selt.encoder
+
         self.fc1 = nn.Linear(encoder_features*8*4*4, bottleneck)
 
         # decoder
@@ -20,9 +24,9 @@ class AE(nn.Module):
 
         decoder_levels = [8*2, 8, 4, 2, 1]
         for i, step in enumerate(decoder_levels[:-1]):
-            self.decoder_blocks.append(nn.BatchNorm2d(self.deconv_block(step*decoder_features, levels[i+1]*decoder_features), 1.e-3))
+            self.decoder_blocks.append(self.deconv_block(step*decoder_features, decoder_levels[i+1]*decoder_features))
 
-        self.decoder_blocks.append(self.deconv_block(decoder_features, num_channels))
+        self.decoder_blocks.append(self.deconv_block(decoder_features, num_channels, batchnorm=False))
         
         # activations 
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -38,15 +42,21 @@ class AE(nn.Module):
         return nn.Sequential(nn.Conv2d(in_feat, out_feat, 4, 2, 1), 
                              nn.BatchNorm2d(out_feat))
 
-    def deconv_block(self, in_feat, out_feat):
+    def deconv_block(self, in_feat, out_feat, batchnorm=True):
 
-        return nn.Sequential(nn.UpsamplingNearest2d(scale_factor=2),
-                             nn.ReplicationPad2d(1),
-                             nn.Conv2d(in_feat, out_feat, 3, 1))
+        if batchnorm:
+            return nn.Sequential(nn.UpsamplingNearest2d(scale_factor=2),
+                                 nn.ReplicationPad2d(1),
+                                 nn.Conv2d(in_feat, out_feat, 3, 1), 
+                                 nn.BatchNorm2d(out_feat, 1.e-3))
+        else:
+            return nn.Sequential(nn.UpsamplingNearest2d(scale_factor=2),
+                                 nn.ReplicationPad2d(1),
+                                 nn.Conv2d(in_feat, out_feat, 3, 1))
 
     def encode(self, x):
 
-        encoder_out = self.leaky_relu(self.encoder_blocks[0](x))
+        encoder_out = self.leakyrelu(self.encoder_blocks[0](x))
         for block in self.encoder_blocks:
             encoder_out = self.leakyrelu(block(encoder_out))
 

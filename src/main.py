@@ -1,3 +1,7 @@
+import os 
+import sys
+sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/src')
+
 import argparse
 import random
 import torch
@@ -12,18 +16,23 @@ experiment = Experiment(
     project_name="sk-fast-dnn-ensembles",
     workspace="grebenkovao", log_code = False)
 
-from losses import VGGPerceptualLoss as perceptual_loss
+from models.autoencoder_old import AE
+from utils.train_test import train_epoch, test_epoch
+from utils.loader import get_celeba
+from losses.perceptual import VGGPerceptualLoss as perceptual_loss
 
 
 def main(model, optimizer, loss, train_loader, test_loader, epochs, device, seed_value='42', loss_name='mse'):
     
-    for i in tqdm(range(epochs)):
-        train_loss = train_epoch(model, optimizer, train_loader, device, loss)
+    for epoch in tqdm(range(epochs)):
+        i = epoch + 1
+
+        train_loss = train_epoch(model, optimizer, train_loader, device, loss, experiment)
         experiment.log_metric(name = 'train_loss', value = train_loss, epoch=i)
         print('Train Epoch: {}. Average loss: {:.4f}\n'.format(i, train_loss))
  
         #train_log.write('Train Epoch: {}. Average loss: {:.4f}\n'.format(i, loss))
-        test_loss, image, recon_batch = test(model, optimizer, test_loader, device, recon_function)
+        test_loss, image, recon_batch = test_epoch(model, optimizer, test_loader, device, loss, experiment)
         experiment.log_metric(name = 'test_loss', value = test_loss, epoch=i)
         print('Test Epoch: {}. loss: {:.4f}\n'.format(i, test_loss))
 
@@ -43,10 +52,10 @@ def main(model, optimizer, loss, train_loader, test_loader, epochs, device, seed
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--epoches', type=int, help='number of epoches for training and testing')
+    parser.add_argument('-e', '--epochs', type=int, default=30, help='number of epoches for training and testing')
     parser.add_argument('-s', '--seed', type=int, default=42, help='random seed to initialize pytorch')
     parser.add_argument('-l', '--loss', type=str, choices=['mse', 'vgg'], help='loss: mse or vgg perceptual loss')    
-    parser.add_argument('-lr', type=float, help='learning rate for training')
+    parser.add_argument('-lr', type=float, default=1e-4, help='learning rate for training')
     parser.add_argument('-d', '--data-dir', type=str, default='./data/celeba', help='directory with CelebA dataset') 
     
     args = parser.parse_args()
@@ -70,9 +79,9 @@ if __name__ == '__main__':
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    epochs = args.epoches
-    model = AE(num_channels=3, encoder_features=64, decoder_features=64, bottleneck=128)
+    model = AE(3, 64, 64, bottleneck=128)
     model.to(device)
+    print(model)    
 
     if args.loss == 'mse':
         loss = nn.MSELoss()
@@ -85,7 +94,8 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
-    train_loader, test_loader = get_celeba(batch_size=64)
-    main(model, optimizer, loss, train_loader, test_loader, epochs, device, seed_value=seed_value, loss_name=args.loss)
+    train_loader, test_loader = get_celeba(args.data_dir, batch_size=64)
+    experiment.add_tag(tag=f'seed_{seed_value}_loss_{args.loss}')
+    main(model, optimizer, loss, train_loader, test_loader, args.epochs, device, seed_value=seed_value, loss_name=args.loss)
 
 
