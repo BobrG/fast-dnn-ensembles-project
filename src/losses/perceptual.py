@@ -3,7 +3,7 @@ import torchvision
 # code from here: https://gist.github.com/alper111/8233cdb0414b4cb5853f2f730ab95a49
 
 class VGGPerceptualLoss(torch.nn.Module):
-    def __init__(self, resize=True, vgg='16'): # TODO: add vgg='19'
+    def __init__(self, recon_function, resize=True, vgg='16'): # TODO: add vgg='19'
         super(VGGPerceptualLoss, self).__init__()
         blocks = []
         blocks.append(torchvision.models.vgg16(pretrained=True).features[:4].eval())
@@ -34,13 +34,5 @@ class VGGPerceptualLoss(torch.nn.Module):
         for i, block in enumerate(self.blocks):
             x = block(x)
             y = block(y)
-            if i in feature_layers:
-		loss += nn.MSELoss(x, y) / (x.shape[2] * x.shape[3]) # ?
-                # loss += torch.nn.functional.l1_loss(x, y)
-            #if i in style_layers:
-            #    act_x = x.reshape(x.shape[0], x.shape[1], -1)
-            #    act_y = y.reshape(y.shape[0], y.shape[1], -1)
-            #    gram_x = act_x @ act_x.permute(0, 2, 1)
-            #    gram_y = act_y @ act_y.permute(0, 2, 1)
-            #    loss += torch.nn.functional.l1_loss(gram_x, gram_y)
+            loss += recon_function(x, y) / (x.shape[2] * x.shape[3])
         return loss
