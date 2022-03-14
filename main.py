@@ -1,4 +1,5 @@
-from __future__ import print_function
+#import sys
+#sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/')
 import argparse
 import torch
 import torch.utils.data
@@ -14,11 +15,13 @@ import numpy as np
 import random
 from PIL import Image
 from tqdm import tqdm
+from perceptual import VGGPerceptualLoss as perceptual_loss
+import argparse
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Directory containing the data.
-root = './data/celeba'
+root = '../data/celeba'
 
 seed_value=303
 
@@ -180,10 +183,18 @@ def train(model, optimizer, train_loader, test_loader, epochs, device):
         torch.save(model.state_dict(), f"./models/model_seed_{seed_value}.pth")
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--loss', type=str, choices=['mse', 'vgg'], help='loss: mse or vgg perceptual loss')    
+    args = parser.parse_args()
+
     epochs = 30
     model = AE(nc=3, ngf=128, ndf=128, bottleneck=128)
     model.to(device)
-    recon_function = nn.MSELoss()
+    if args.loss == 'mse':
+        recon_function = nn.MSELoss()
+    elif args.loss == 'vgg':
+        recon_function = perceptual_loss(nn.MSELoss()).to(device)
+
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
     train_loader, test_loader = get_celeba(batch_size=64)
     train(model, optimizer, train_loader, test_loader, epochs, device)
