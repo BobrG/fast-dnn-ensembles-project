@@ -2,10 +2,10 @@
 Through the void: interpolating path for auto-encoders's parameters
 # Project Team
 
-Gleb Bobrovskikh
-Nikita Marin 
-Maria Lysyuk 
-Olga Grebenkova 
+Gleb Bobrovskikh   
+Nikita Marin    
+Maria Lysyuk    
+Olga Grebenkova    
 
 # Proposal
 In paper ( https://arxiv.org/pdf/1802.10026.pdf ) , the authors propose a simple
