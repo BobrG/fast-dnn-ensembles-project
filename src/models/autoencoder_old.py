@@ -1,10 +1,14 @@
+import torch
+import torch.nn as nn
+import numpy as np
+
 class AE(nn.Module):
-    def __init__(self, nc, ngf, ndf, bottleneck = 128):
+    def __init__(self, num_channels, encoder_features, decoder_features, bottleneck = 128):
         super(AE, self).__init__()
 
-        self.nc = nc
-        self.ngf = ngf
-        self.ndf = ndf
+        self.nc = num_channels
+        self.ngf = encoder_features
+        self.ndf = decoder_features
         # encoder
         self.e1 = nn.Conv2d(nc, ndf, 4, 2, 1)
         self.bn1 = nn.BatchNorm2d(ndf)
