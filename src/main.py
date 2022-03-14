@@ -1,6 +1,12 @@
+from comet_ml import Experiment
+experiment = Experiment(
+    api_key="KfIQxtLQwFBi7wahbWN9aCeav",
+    project_name="sk-fast-dnn-ensembles",
+    workspace="grebenkovao", log_code = False)
+
 import os 
 import sys
-sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/src')
+#sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/src')
 
 import argparse
 import random
@@ -10,12 +16,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 from tqdm import tqdm
-from comet_ml import Experiment
-experiment = Experiment(
-    api_key="KfIQxtLQwFBi7wahbWN9aCeav",
-    project_name="sk-fast-dnn-ensembles",
-    workspace="grebenkovao", log_code = False)
-
 from models.autoencoder_old import AE
 from utils.train_test import train_epoch, test_epoch
 from utils.loader import get_celeba
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
-    train_loader, test_loader = get_celeba(args.data_dir, batch_size=64)
+    train_loader, test_loader = get_celeba(args.data_dir, batch_size=1)
     experiment.add_tag(tag=f'seed_{seed_value}_loss_{args.loss}')
     main(model, optimizer, loss, train_loader, test_loader, args.epochs, device, seed_value=seed_value, loss_name=args.loss)
 

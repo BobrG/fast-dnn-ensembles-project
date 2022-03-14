@@ -25,14 +25,14 @@ class AE(nn.Module):
         self.e5 = nn.Conv2d(ndf*8, ndf*8, 4, 2, 1)
         self.bn5 = nn.BatchNorm2d(ndf*8)
 
-        self.fc1 = nn.Linear(ndf*8*4*4, bottleneck)
+        self.fc1 = nn.Linear(ndf*8*4, bottleneck)
 
         # decoder
-        self.d1 = nn.Linear(bottleneck, ngf*8*2*4*4)
+        self.d1 = nn.Linear(bottleneck, ngf*8*4)
 
         self.up1 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd1 = nn.ReplicationPad2d(1)
-        self.d2 = nn.Conv2d(ngf*8*2, ngf*8, 3, 1)
+        self.d2 = nn.Conv2d(ngf*2, ngf*8, 3, 1)
         self.bn6 = nn.BatchNorm2d(ngf*8, 1.e-3)
 
         self.up2 = nn.UpsamplingNearest2d(scale_factor=2)
@@ -50,7 +50,7 @@ class AE(nn.Module):
         self.d5 = nn.Conv2d(ngf*2, ngf, 3, 1)
         self.bn9 = nn.BatchNorm2d(ngf, 1.e-3)
 
-        self.up5 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.up5 = nn.UpsamplingNearest2d(scale_factor=1)
         self.pd5 = nn.ReplicationPad2d(1)
         self.d6 = nn.Conv2d(ngf, nc, 3, 1)
 
@@ -65,14 +65,14 @@ class AE(nn.Module):
         h4 = self.leakyrelu(self.bn4(self.e4(h3)))
         h5 = self.leakyrelu(self.bn5(self.e5(h4)))
         print('encoder last layer', h5.shape)
-        h5 = h5.view(-1, self.ndf*8*4*4)
+        h5 = h5.view(-1, self.ndf*8*4)
 
         return self.fc1(h5)
 
     def decode(self, z):
         h1 = self.relu(self.d1(z))
         print('decoder h1 shape', h1.shape)
-        h1 = h1.view(-1, self.ngf*8*2, 4, 4)
+        h1 = h1.view(-1, self.ngf*2, 4, 4)
         h2 = self.leakyrelu(self.bn6(self.d2(self.pd1(self.up1(h1)))))
         print('decoder h2 shape', h2.shape)
         h3 = self.leakyrelu(self.bn7(self.d3(self.pd2(self.up2(h2)))))
