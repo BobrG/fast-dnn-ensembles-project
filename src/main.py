@@ -6,7 +6,7 @@ experiment = Experiment(
 
 import os 
 import sys
-#sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/src')
+sys.path.append('/home/gbobrovskih/sk_fast_dnn_ensembles/src')
 
 import argparse
 import random
@@ -14,6 +14,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
+import torchvision
 
 from tqdm import tqdm
 from models.autoencoder_old import AE
@@ -38,8 +39,8 @@ def main(model, optimizer, loss, train_loader, test_loader, epochs, device, seed
 
         #test_log.write('Test Epoch: {}. loss: {:.4f}\n'.format(i, test_loss))
         
-        torchvision.utils.save_image(image[:8].data, f'./imgs/seed_{seed_value}_loss_{loss_name}/seed_{seed_value}/Seed_{seed_value}_epoch_{i}_data.jpg', nrow=8, padding=2)
-        torchvision.utils.save_image(recon_batch[:8].data, f'./imgs/seed_{seed_value}_loss_{loss_name}/seed_{seed_value}/Seed_{seed_value}_epoch_{i}_recon.jpg', nrow=8, padding=2)
+        torchvision.utils.save_image(image[:8].data, f'./imgs/seed_{seed_value}_loss_{loss_name}/Seed_{seed_value}_epoch_{i}_data.jpg', nrow=8, padding=2)
+        torchvision.utils.save_image(recon_batch[:8].data, f'./imgs/seed_{seed_value}_loss_{loss_name}/Seed_{seed_value}_epoch_{i}_recon.jpg', nrow=8, padding=2)
         #plt.imsave('./Seed_{seed_value}_epoch_{i}_recon_plt.jpg', np.transpose(recon_batch[0].detach().cpu().numpy(), (1, 2, 0)))
         
         torch.save({
@@ -54,6 +55,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--epochs', type=int, default=30, help='number of epoches for training and testing')
     parser.add_argument('-s', '--seed', type=int, default=42, help='random seed to initialize pytorch')
+    parser.add_argument('--batch-size', type=int, default=64, help='batch size for train and test')
     parser.add_argument('-l', '--loss', type=str, choices=['mse', 'vgg'], help='loss: mse or vgg perceptual loss')    
     parser.add_argument('-lr', type=float, default=1e-4, help='learning rate for training')
     parser.add_argument('-d', '--data-dir', type=str, default='./data/celeba', help='directory with CelebA dataset') 
@@ -81,12 +83,16 @@ if __name__ == '__main__':
 
     model = AE(3, 64, 64, bottleneck=128)
     model.to(device)
-    print(model)    
 
     if args.loss == 'mse':
         loss = nn.MSELoss()
     elif args.loss == 'vgg':
-        loss = perceptual_loss(nn.MSELoss()).to(device)
+        from torchvision import transforms 
+        invTrans = lambda a: a*torch.tensor([-0.5,-0.5,-0.5], device=device, dtype=torch.float).view(1, -1, 1, 1) + torch.tensor([1/0.5,1/0.5,1/0.5], device=device, dtype=torch.float).view(1, -1, 1, 1) 
+        #transforms.Normalize(( -0.5, -0.5, -0.5 ),( 1/0.5, 1/0.5, 1/0.5 ))
+                               
+
+        loss = perceptual_loss(nn.MSELoss(), invtransform=invTrans).to(device)
 
     if not os.path.exists(f'./imgs/seed_{seed_value}_loss_{args.loss}'):
         print(f'./imgs/seed_{seed_value}_loss_{args.loss} doesn not exist ==> creating a directory')
@@ -94,7 +100,7 @@ if __name__ == '__main__':
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
-    train_loader, test_loader = get_celeba(args.data_dir, batch_size=1)
+    train_loader, test_loader = get_celeba(args.data_dir, batch_size=args.batch_size)
     experiment.add_tag(tag=f'seed_{seed_value}_loss_{args.loss}')
     main(model, optimizer, loss, train_loader, test_loader, args.epochs, device, seed_value=seed_value, loss_name=args.loss)
 
