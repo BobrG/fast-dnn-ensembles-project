@@ -35,6 +35,9 @@ def get_celeba(root, batch_size):
     Loads the dataset and applies proproccesing steps to it.
     Returns a PyTorch DataLoader.
     """
+    print(f'Loading data from {root}')
+    print(f'Using batch size = {batch_size} and train/test split 0.8/0.2')
+
     # Data proprecessing.
     transform = transforms.Compose([
         transforms.Resize(64),
