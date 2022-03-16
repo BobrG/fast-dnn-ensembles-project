@@ -64,22 +64,17 @@ class AE(nn.Module):
         h3 = self.leakyrelu(self.bn3(self.e3(h2)))
         h4 = self.leakyrelu(self.bn4(self.e4(h3)))
         h5 = self.leakyrelu(self.bn5(self.e5(h4)))
-        print('encoder last layer', h5.shape)
         h5 = h5.view(-1, self.ndf*8*4)
 
         return self.fc1(h5)
 
     def decode(self, z):
         h1 = self.relu(self.d1(z))
-        print('decoder h1 shape', h1.shape)
         h1 = h1.view(-1, self.ngf*2, 4, 4)
         h2 = self.leakyrelu(self.bn6(self.d2(self.pd1(self.up1(h1)))))
-        print('decoder h2 shape', h2.shape)
         h3 = self.leakyrelu(self.bn7(self.d3(self.pd2(self.up2(h2)))))
         h4 = self.leakyrelu(self.bn8(self.d4(self.pd3(self.up3(h3)))))
         h5 = self.leakyrelu(self.bn9(self.d5(self.pd4(self.up4(h4)))))
-        print('decoder h5 shape', h5.shape)
-        print('decoder d6 shape', self.d6(self.pd5(self.up5(h5))).shape)
 
         return self.sigmoid(self.d6(self.pd5(self.up5(h5))))
 
