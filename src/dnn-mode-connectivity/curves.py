@@ -275,11 +275,9 @@ class CurveNet(Module):
                 self.curve_modules.append(module)
 
     def import_base_parameters(self, base_model, index):
-        print([(l[0], l[1].detach().numpy().shape) for l in list(self.net.named_parameters())[index::self.num_bends]])
         parameters = list(self.net.parameters())[index::self.num_bends]
         base_parameters = base_model.parameters()
         for i, (parameter, base_parameter) in enumerate(zip(parameters, base_parameters)):
-            print(i, parameter.data.shape, 'vs', base_parameter.data.shape)
             parameter.data.copy_(base_parameter.data)
 
     def import_base_buffers(self, base_model):

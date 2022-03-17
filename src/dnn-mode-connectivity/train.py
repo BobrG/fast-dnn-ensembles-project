@@ -95,6 +95,7 @@ if args.curve is None:
     else:
         model = architecture.base(num_classes=num_classes, **architecture.kwargs)
 else:
+    print('using curve')
     curve = getattr(curves, args.curve)
     if args.model == 'AE':
         num_classes = 0
@@ -163,6 +164,7 @@ columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'te_nll', 'te_acc', 'time']
 utils.save_checkpoint(
     args.dir,
     start_epoch - 1,
+    name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}'
     model_state=model.state_dict(),
     optimizer_state=optimizer.state_dict()
 )
@@ -203,9 +205,11 @@ for epoch in range(start_epoch, args.epochs + 1):
     print(table)
 
 if args.epochs % args.save_freq != 0:
+    print('saving model... ' + f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}')
     utils.save_checkpoint(
         args.dir,
         args.epochs,
+        name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
         model_state=model.state_dict(),
         optimizer_state=optimizer.state_dict()
     )
