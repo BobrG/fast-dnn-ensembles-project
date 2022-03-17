@@ -123,22 +123,22 @@ class AECurve(nn.Module):
         self.up1 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd1 = nn.ReplicationPad2d(1)
         self.d2 = curves.Conv2d(in_channels=2 * ngf, out_channels=8 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn5 = curves.BatchNorm2d(8 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn6 = curves.BatchNorm2d(8 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up2 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd2 = nn.ReplicationPad2d(1)
         self.d3 = curves.Conv2d(in_channels=8 * ngf, out_channels=4 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn7 = curves.BatchNorm2d(4 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn7 = curves.BatchNorm2d(4 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up3 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd3 = nn.ReplicationPad2d(1)
         self.d4 = curves.Conv2d(in_channels=4 * ngf, out_channels=2 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn8 = curves.BatchNorm2d(2 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn8 = curves.BatchNorm2d(2 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up4 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd4 = nn.ReplicationPad2d(1)
         self.d5 = curves.Conv2d(in_channels=2 * ngf, out_channels=ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn8 = curves.BatchNorm2d(ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn9 = curves.BatchNorm2d(ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up5 = nn.UpsamplingNearest2d(scale_factor=1)
         self.pd5 = nn.ReplicationPad2d(1)
