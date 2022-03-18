@@ -12,6 +12,9 @@ import data
 import models
 import utils
 
+import sys
+#sys.path.append('/home/sk_fast_dnn_ensemble/src/')
+from losses.perceptual import VGGPerceptualLoss as perceptual_loss
 
 parser = argparse.ArgumentParser(description='DNN curve training')
 parser.add_argument('--dir', type=str, default='/tmp/curve/', metavar='DIR',
@@ -63,6 +66,8 @@ parser.add_argument('--wd', type=float, default=1e-4, metavar='WD',
                     help='weight decay (default: 1e-4)')
 
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+parser.add_argument('--loss', type=str, default=None, help='loss function name')
+parser.add_argument('--checkpoint-model-name', type=str, default='model_state', help='model parameters key name in checkpoint')
 
 args = parser.parse_args()
 
@@ -120,7 +125,7 @@ else:
                 checkpoint = torch.load(path)
 
                 print('Loading %s as point #%d' % (path, k))
-                base_model.load_state_dict(checkpoint['model_state'])
+                base_model.load_state_dict(checkpoint[args.checkpoint_model_name])
                 model.import_base_parameters(base_model, k)
         if args.init_linear:
             print('Linear initialization.')
@@ -138,8 +143,12 @@ def learning_rate_schedule(base_lr, epoch, total_epochs):
         factor = 0.01
     return factor * base_lr
 
-if args.model == 'AE':
+if args.loss == 'mse':
     criterion = nn.MSELoss()
+elif args.loss == 'vgg':
+    from torchvision import transforms
+    invTrans = lambda a: a/2 + 0.5
+    criterion = perceptual_loss(nn.MSELoss(), invTrans)
 else:
     criterion = F.cross_entropy
 regularizer = None if args.curve is None else curves.l2_regularizer(args.wd)
@@ -156,7 +165,7 @@ if args.resume is not None:
     print('Resume training from %s' % args.resume)
     checkpoint = torch.load(args.resume)
     start_epoch = checkpoint['epoch'] + 1
-    model.load_state_dict(checkpoint['model_state'])
+    model.load_state_dict(checkpoint[args.checkpoint_model_name])
     optimizer.load_state_dict(checkpoint['optimizer_state'])
 
 columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'te_nll', 'te_acc', 'time']
@@ -164,7 +173,7 @@ columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'te_nll', 'te_acc', 'time']
 utils.save_checkpoint(
     args.dir,
     start_epoch - 1,
-    name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}'
+    name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
     model_state=model.state_dict(),
     optimizer_state=optimizer.state_dict()
 )
@@ -188,6 +197,7 @@ for epoch in range(start_epoch, args.epochs + 1):
         utils.save_checkpoint(
             args.dir,
             epoch,
+            name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
             model_state=model.state_dict(),
             optimizer_state=optimizer.state_dict()
         )

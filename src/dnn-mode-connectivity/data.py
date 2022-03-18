@@ -79,7 +79,7 @@ def loaders(dataset, path, batch_size, num_workers, transform_name, use_test=Fal
            }, max(train_set.train_labels) + 1
 
 
-def get_celeba(root, batch_size):
+def get_celeba(root, batch_size, shuffle_train=True):
     """
     Loads the dataset and applies proproccesing steps to it.
     Returns a PyTorch DataLoader.
@@ -100,7 +100,7 @@ def get_celeba(root, batch_size):
     train_set, test_set = torch.utils.data.random_split(dataset, [int(len(dataset)*0.8), len(dataset)-int(len(dataset)*0.8)])
     # Create the dataloader.
 
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle_train)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
     return {'train': train_loader, 'test': test_loader}
