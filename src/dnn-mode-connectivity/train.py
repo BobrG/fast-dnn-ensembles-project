@@ -69,6 +69,8 @@ parser.add_argument('--seed', type=int, default=1, metavar='S', help='random see
 parser.add_argument('--loss', type=str, default=None, help='loss function name')
 parser.add_argument('--checkpoint-model-name', type=str, default='model_state', help='model parameters key name in checkpoint')
 
+parser.add_argument('--checkpoint-model-name', type=str, default='model_state', help='model parameters key name in checkpoint')
+
 args = parser.parse_args()
 
 os.makedirs(args.dir, exist_ok=True)
