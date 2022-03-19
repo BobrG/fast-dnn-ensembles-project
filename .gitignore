@@ -1,6 +1,6 @@
 # logs, outputs, weights
-./imgs
-./models
+imgs/
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
