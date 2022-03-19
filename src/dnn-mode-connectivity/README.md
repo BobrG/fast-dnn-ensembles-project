@@ -40,7 +40,7 @@ The code in this repository implements both the curve-finding procedure and Fast
 ## Curve Finding
 
 
-### Training the endpoints (WORKS) - [x] 
+### Training the endpoints (WORKS) - :white_check_mark:
 
 To run the curve-finding procedure, you first need to train the two networks that will serve as the end-points of the curve. You can train the endpoints using the following command
 
@@ -82,7 +82,7 @@ python3 train.py --dir=<DIR> --dataset=[CIFAR10 or CIFAR100] --data_path=<PATH> 
 python3 train.py --dir=<DIR> --dataset=[CIFAR10 or CIFAR100] --data_path=<PATH> --model=WideResNet28x10 --epochs=200 --lr=0.1 --wd=5e-4 --use_test --transform=ResNet
 ```
 
-### Training the curves (DOESN'T WORK) :warning:
+### Training the curves (DOESN'T WORK) :white_check_mark:
 
 Once you have two checkpoints to use as the endpoints you can train the curve connecting them using the following comand.
 

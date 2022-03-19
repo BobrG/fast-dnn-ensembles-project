@@ -13,13 +13,12 @@ import models
 import utils
 
 import sys
-#sys.path.append('/home/sk_fast_dnn_ensemble/src/')
+sys.path.append('/home/sk_fast_dnn_ensemble/src/')
 from losses.perceptual import VGGPerceptualLoss as perceptual_loss
 
 parser = argparse.ArgumentParser(description='DNN curve training')
 parser.add_argument('--dir', type=str, default='/tmp/curve/', metavar='DIR',
                     help='training directory (default: /tmp/curve/)')
-
 parser.add_argument('--dataset', type=str, default='CIFAR10', metavar='DATASET',
                     help='dataset name (default: CIFAR10)')
 parser.add_argument('--use_test', action='store_true',
@@ -53,10 +52,10 @@ parser.add_argument('--init_linear_off', dest='init_linear', action='store_false
                     help='turns off linear initialization of intermediate points (default: on)')
 parser.add_argument('--resume', type=str, default=None, metavar='CKPT',
                     help='checkpoint to resume training from (default: None)')
-
+parser.add_argument('--checkpoint_name', type=str, default='', help='name for checkpoint')
 parser.add_argument('--epochs', type=int, default=200, metavar='N',
                     help='number of epochs to train (default: 200)')
-parser.add_argument('--save_freq', type=int, default=50, metavar='N',
+parser.add_argument('--save_freq', type=int, default=5, metavar='N',
                     help='save frequency (default: 50)')
 parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                     help='initial learning rate (default: 0.01)')
@@ -67,8 +66,6 @@ parser.add_argument('--wd', type=float, default=1e-4, metavar='WD',
 
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
 parser.add_argument('--loss', type=str, default=None, help='loss function name')
-parser.add_argument('--checkpoint-model-name', type=str, default='model_state', help='model parameters key name in checkpoint')
-
 parser.add_argument('--checkpoint-model-name', type=str, default='model_state', help='model parameters key name in checkpoint')
 
 args = parser.parse_args()
@@ -150,7 +147,7 @@ if args.loss == 'mse':
 elif args.loss == 'vgg':
     from torchvision import transforms
     invTrans = lambda a: a/2 + 0.5
-    criterion = perceptual_loss(nn.MSELoss(), invTrans)
+    criterion = perceptual_loss(nn.MSELoss(), invTrans).cuda()
 else:
     criterion = F.cross_entropy
 regularizer = None if args.curve is None else curves.l2_regularizer(args.wd)
@@ -160,7 +157,6 @@ optimizer = torch.optim.SGD(
     momentum=args.momentum,
     weight_decay=args.wd if args.curve is None else 0.0
 )
-
 
 start_epoch = 1
 if args.resume is not None:
@@ -172,10 +168,11 @@ if args.resume is not None:
 
 columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'te_nll', 'te_acc', 'time']
 
+print('saving model... ' + f'checkpoint_name_{args.checkpoint_name}_mode_{args.model}_loss_{args.loss}_curve_{args.curve}_nbends_{args.num_bends}')
 utils.save_checkpoint(
     args.dir,
     start_epoch - 1,
-    name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
+    name = f'checkpoint_name_{args.checkpoint_name}_mode_{args.model}_loss_{args.loss}_curve_{args.curve}_nbends_{args.num_bends}',
     model_state=model.state_dict(),
     optimizer_state=optimizer.state_dict()
 )
@@ -199,7 +196,7 @@ for epoch in range(start_epoch, args.epochs + 1):
         utils.save_checkpoint(
             args.dir,
             epoch,
-            name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
+            name = f'checkpoint_name_{args.checkpoint_name}_mode_{args.model}_loss_{args.loss}_curve_{args.curve}_nbends_{args.num_bends}',
             model_state=model.state_dict(),
             optimizer_state=optimizer.state_dict()
         )
@@ -217,11 +214,11 @@ for epoch in range(start_epoch, args.epochs + 1):
     print(table)
 
 if args.epochs % args.save_freq != 0:
-    print('saving model... ' + f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}')
+    print('saving model... ' + f'checkpoint_name_{args.checkpoint_name}_mode_{args.model}_loss_{args.loss}_curve_{args.curve}_nbends_{args.num_bends}')
     utils.save_checkpoint(
         args.dir,
         args.epochs,
-        name = f'checkpoint-mode={args.model}-curve={args.curve}-nbends={args.num_bends}',
+        name = f'checkpoint_name_{args.checkpoint_name}_mode_{args.model}_loss_{args.loss}_curve_{args.curve}_nbends_{args.num_bends}',
         model_state=model.state_dict(),
         optimizer_state=optimizer.state_dict()
     )
