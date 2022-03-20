@@ -67,7 +67,7 @@ else:
 
 architecture = getattr(models, args.model)
 curve = getattr(curves, args.curve)
-if args.model == 'AE':
+if args.model == 'AE': # TODO add VGG loss
     num_classes = 0
 model = curves.CurveNet(
     args.model,
@@ -86,7 +86,10 @@ if args.model == 'AE':
 else:
     criterion = F.cross_entropy
 
-regularizer = curves.l2_regularizer(args.wd)
+if args.model == 'AE':
+    regularizer = None
+else:
+    regularizer = curves.l2_regularizer(args.wd)
 
 T = args.num_points
 ts = np.linspace(0.0, 1.0, T)

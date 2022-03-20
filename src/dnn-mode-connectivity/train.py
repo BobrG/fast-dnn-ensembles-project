@@ -151,12 +151,18 @@ elif args.loss == 'vgg':
 else:
     criterion = F.cross_entropy
 regularizer = None if args.curve is None else curves.l2_regularizer(args.wd)
-optimizer = torch.optim.SGD(
-    filter(lambda param: param.requires_grad, model.parameters()),
-    lr=args.lr,
-    momentum=args.momentum,
-    weight_decay=args.wd if args.curve is None else 0.0
-)
+
+if args.model == 'AE':
+    print('creating ADAM optimizer')
+    optimizer = torch.optim.Adam(filter(lambda param: param.requires_grad, model.parameters()),
+                                 lr=args.lr)
+else:
+    optimizer = torch.optim.SGD(
+        filter(lambda param: param.requires_grad, model.parameters()),
+        lr=args.lr,
+        momentum=args.momentum,
+        weight_decay=args.wd if args.curve is None else 0.0
+    )
 
 start_epoch = 1
 if args.resume is not None:
@@ -165,6 +171,7 @@ if args.resume is not None:
     start_epoch = checkpoint['epoch'] + 1
     model.load_state_dict(checkpoint[args.checkpoint_model_name])
     optimizer.load_state_dict(checkpoint['optimizer_state'])
+    print('loaded optimizer step')
 
 columns = ['ep', 'lr', 'tr_loss', 'tr_acc', 'te_nll', 'te_acc', 'time']
 
@@ -189,6 +196,7 @@ for epoch in range(start_epoch, args.epochs + 1):
     else:
         loader_type = None
     train_res = utils.train(loaders['train'], model, optimizer, criterion, regularizer, loader_type=loader_type)
+    print(f'Epoch {epoch} train results {train_res}')
     if args.curve is None or not has_bn:
         test_res = utils.test(loaders['test'], model, criterion, regularizer, loader_type=loader_type)
 
