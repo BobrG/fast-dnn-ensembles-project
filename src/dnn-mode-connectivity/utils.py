@@ -64,17 +64,30 @@ def train(train_loader, model, optimizer, criterion, regularizer=None, lr_schedu
         loss.backward()
         optimizer.step()
 
-        loss_sum += loss.item() * input.size(0)
+        if loader_type == 'celeba':
+            loss_sum += loss.item()
+        else:
+            loss_sum += loss.item() * input.size(0)
         pred = output.data.argmax(1, keepdim=True)
+
+        if iter % 100 == 0:
+            print(f'Batch {iter} loss {loss.item()}')
+
         if loader_type == 'celeba':
             correct = 0.0
         else:
             correct += pred.eq(target.data.view_as(pred)).sum().item()
 
-    return {
-        'loss': loss_sum / len(train_loader.dataset),
-        'accuracy': correct * 100.0 / len(train_loader.dataset),
-    }
+    if loader_type == 'celeba':
+        return {
+                'loss': loss_sum / len(train_loader),
+                'accuracy': correct * 100.0 / len(train_loader.dataset)
+                }
+    else:
+        return {
+            'loss': loss_sum / len(train_loader.dataset),
+            'accuracy': correct * 100.0 / len(train_loader.dataset),
+        }
 
 
 def test(test_loader, model, criterion, regularizer=None, loader_type=None, **kwargs):
@@ -97,19 +110,32 @@ def test(test_loader, model, criterion, regularizer=None, loader_type=None, **kw
         if regularizer is not None:
             loss += regularizer(model)
 
-        nll_sum += nll.item() * input.size(0)
-        loss_sum += loss.item() * input.size(0)
+        if loader_type == 'celeba':
+            nll_sum += nll.item()
+            loss_sum += loss.item()
+        else:
+            nll_sum += nll.item() * input.size(0)
+            loss_sum += loss.item() * input.size(0)
         if loader_type == 'celeba':
             correct = 0.0
         else:
             pred = output.data.argmax(1, keepdim=True)
             correct += pred.eq(target.data.view_as(pred)).sum().item()
 
-    return {
-        'nll': nll_sum / len(test_loader.dataset),
-        'loss': loss_sum / len(test_loader.dataset),
-        'accuracy': correct * 100.0 / len(test_loader.dataset),
-    }
+    if loader_type == 'celeba':
+        return {
+            'nll': nll_sum / len(test_loader),
+            'loss': loss_sum / len(test_loader),
+            'accuracy': correct * 100.0 / len(test_loader),
+            'image_in': input,
+            'image_out': output
+        }
+    else:
+        return {
+            'nll': nll_sum / len(test_loader.dataset),
+            'loss': loss_sum / len(test_loader.dataset),
+            'accuracy': correct * 100.0 / len(test_loader.dataset),
+        }
 
 
 

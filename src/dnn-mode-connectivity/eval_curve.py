@@ -11,6 +11,7 @@ import models
 import curves
 import utils
 import torch.nn as nn
+from losses.perceptual import VGGPerceptualLoss as perceptual_loss
 
 parser = argparse.ArgumentParser(description='DNN curve evaluation')
 parser.add_argument('--dir', type=str, default='/tmp/eval', metavar='DIR',
@@ -46,6 +47,9 @@ parser.add_argument('--wd', type=float, default=1e-4, metavar='WD',
                     help='weight decay (default: 1e-4)')
 parser.add_argument('--num-points', type=int, default=100, 
                     help='number of points for curve')
+
+parser.add_argument('--loss', type=str, help='loss: mse/vgg/cross-entropy')
+
 args = parser.parse_args()
 
 os.makedirs(args.dir, exist_ok=True)
@@ -81,8 +85,12 @@ model.cuda()
 checkpoint = torch.load(args.ckpt)
 model.load_state_dict(checkpoint['model_state'])
 
-if args.model == 'AE':
+if args.model == 'AE' and args.loss == 'mse':
     criterion = nn.MSELoss()
+elif args.model == 'AE' and args.loss == 'vgg':
+    from torchvision import transforms
+    invTrans = lambda a: a/2 + 0.5
+    criterion = perceptual_loss(nn.MSELoss(), invTrans).cuda()
 else:
     criterion = F.cross_entropy
 
@@ -119,10 +127,14 @@ for i, t_value in tqdm(enumerate(ts)):
     tr_res = utils.test(loaders['train'], model, criterion, regularizer, t=t, loader_type=args.dataset)
     te_res = utils.test(loaders['test'], model, criterion, regularizer, t=t, loader_type=args.dataset)
     tr_loss[i] = tr_res['loss']
+    tr_in_images = tr_res['image_in']
+    tr_out_images = tr_res['image_out']
     tr_nll[i] = tr_res['nll']
     tr_acc[i] = tr_res['accuracy']
     tr_err[i] = 100.0 - tr_acc[i]
     te_loss[i] = te_res['loss']
+    te_in_images = tr_res['image_in']
+    te_out_images = tr_res['image_out']
     te_nll[i] = te_res['nll']
     te_acc[i] = te_res['accuracy']
     te_err[i] = 100.0 - te_acc[i]
@@ -164,10 +176,12 @@ print(tabulate.tabulate([
     ], tablefmt='simple', floatfmt='10.4f'))
 
 np.savez(
-    os.path.join(args.dir, 'curve.npz'),
+    os.path.join(args.dir, 'curve_with_images.npz'),
     ts=ts,
     dl=dl,
     tr_loss=tr_loss,
+    tr_in_images=tr_in_images,
+    tr_out_images=tr_out_images,
     tr_loss_min=tr_loss_min,
     tr_loss_max=tr_loss_max,
     tr_loss_avg=tr_loss_avg,
@@ -184,6 +198,8 @@ np.savez(
     tr_err_avg=tr_err_avg,
     tr_err_int=tr_err_int,
     te_loss=te_loss,
+    te_in_images=te_in_images,
+    te_out_images=te_out_images,
     te_loss_min=te_loss_min,
     te_loss_max=te_loss_max,
     te_loss_avg=te_loss_avg,
