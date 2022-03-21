@@ -102,9 +102,13 @@ else:
 T = args.num_points
 ts = np.linspace(0.0, 1.0, T)
 tr_loss = np.zeros(T)
+tr_in_image = []
+tr_out_image = []
 tr_nll = np.zeros(T)
 tr_acc = np.zeros(T)
 te_loss = np.zeros(T)
+te_in_image = []
+te_out_image = []
 te_nll = np.zeros(T)
 te_acc = np.zeros(T)
 tr_err = np.zeros(T)
@@ -127,14 +131,14 @@ for i, t_value in tqdm(enumerate(ts)):
     tr_res = utils.test(loaders['train'], model, criterion, regularizer, t=t, loader_type=args.dataset)
     te_res = utils.test(loaders['test'], model, criterion, regularizer, t=t, loader_type=args.dataset)
     tr_loss[i] = tr_res['loss']
-    tr_in_images = tr_res['image_in']
-    tr_out_images = tr_res['image_out']
+    tr_in_image.append(tr_res['image_in'][:8].cpu().detach().numpy())
+    tr_out_image.append(tr_res['image_out'][:8].cpu().detach().numpy())
     tr_nll[i] = tr_res['nll']
     tr_acc[i] = tr_res['accuracy']
     tr_err[i] = 100.0 - tr_acc[i]
     te_loss[i] = te_res['loss']
-    te_in_images = tr_res['image_in']
-    te_out_images = tr_res['image_out']
+    te_in_image.append(tr_res['image_in'][:8].cpu().detach().numpy())
+    te_out_image.append(tr_res['image_out'][:8].cpu().detach().numpy())
     te_nll[i] = te_res['nll']
     te_acc[i] = te_res['accuracy']
     te_err[i] = 100.0 - te_acc[i]
@@ -180,8 +184,8 @@ np.savez(
     ts=ts,
     dl=dl,
     tr_loss=tr_loss,
-    tr_in_images=tr_in_images,
-    tr_out_images=tr_out_images,
+    tr_in_image=np.array(tr_in_image),
+    tr_out_image=np.array(tr_out_image),
     tr_loss_min=tr_loss_min,
     tr_loss_max=tr_loss_max,
     tr_loss_avg=tr_loss_avg,
@@ -198,8 +202,8 @@ np.savez(
     tr_err_avg=tr_err_avg,
     tr_err_int=tr_err_int,
     te_loss=te_loss,
-    te_in_images=te_in_images,
-    te_out_images=te_out_images,
+    te_in_image=np.array(te_in_image),
+    te_out_image=np.array(te_out_image),
     te_loss_min=te_loss_min,
     te_loss_max=te_loss_max,
     te_loss_avg=te_loss_avg,

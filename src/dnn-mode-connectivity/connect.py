@@ -138,15 +138,15 @@ for i in range(len(args.ckpt) - 1):
         te_res = utils.test(loaders['test'], base_model, criterion, regularizer, loader_type=args.dataset)
 
         tr_loss[step] = tr_res['loss']
-        tr_in_image.append(tr_res['tr_in_image'])
-        tr_out_image.append(tr_res['tr_out_image'])
+        tr_in_image.append(tr_res['image_in'][:8].cpu().detach().numpy())
+        tr_out_image.append(tr_res['image_out'][:8].cpu().detach().numpy())
 
         tr_nll[step] = tr_res['nll']
         tr_acc[step] = tr_res['accuracy']
         tr_err[step] = 100.0 - tr_acc[step]
         te_loss[step] = te_res['loss']
-        te_in_image.append(te_res['te_in_image'])
-        te_out_image.append(te_res['te_out_image'])
+        te_in_image.append(te_res['image_in'][:8].cpu().detach().numpy())
+        te_out_image.append(te_res['image_out'][:8].cpu().detach().numpy())
 
         te_nll[step] = te_res['nll']
         te_acc[step] = te_res['accuracy']
