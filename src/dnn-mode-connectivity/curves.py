@@ -21,6 +21,14 @@ class Bezier(Module):
         return self.binom * \
                torch.pow(t, self.range) * \
                torch.pow((1.0 - t), self.rev_range)
+               
+               
+class Segment(Module):
+    def __init__(self, num_bends):
+        super(Segment, self).__init__()
+    
+    def forward(self, t):
+        return t
 
 
 class PolyChain(Module):
