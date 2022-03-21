@@ -71,7 +71,7 @@ else:
 
 architecture = getattr(models, args.model)
 curve = getattr(curves, args.curve)
-if args.model == 'AE': # TODO add VGG loss
+if args.model == 'AE':
     num_classes = 0
 model = curves.CurveNet(
     args.model,
