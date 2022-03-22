@@ -47,7 +47,7 @@ def main(model, optimizer, loss, train_loader, test_loader, epochs, device, seed
                         'optimizer_state_dict': optimizer.state_dict(),
                         'train_loss': train_loss,
                         'test_loss': test_loss
-                       }, f"./models/weights/model_seed_{seed_value}_loss_{loss_name}_epoch_{i}.pt")
+                       }, f"./models/weights_new/model_seed_{seed_value}_loss_{loss_name}_epoch_{i}.pt")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

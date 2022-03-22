@@ -43,8 +43,9 @@ def get_celeba(root, batch_size):
         transforms.Resize(64),
         transforms.CenterCrop(64),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5),
-            (0.5, 0.5, 0.5))])
+        #transforms.Normalize((0.5, 0.5, 0.5),
+        #    (0.5, 0.5, 0.5))
+        ])
 
     # Create the dataset.
     dataset = datasets.ImageFolder(root=root, transform=transform)
