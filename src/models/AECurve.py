@@ -11,7 +11,7 @@ import curves
 
 class AEBase(nn.Module):
     def __init__(self, nc, ngf, ndf, bottleneck = 128):
-        super(AE, self).__init__()
+        super(AEBase, self).__init__()
 
         self.nc = nc
         self.ngf = ngf
@@ -71,22 +71,17 @@ class AEBase(nn.Module):
         h3 = self.leakyrelu(self.bn3(self.e3(h2)))
         h4 = self.leakyrelu(self.bn4(self.e4(h3)))
         h5 = self.leakyrelu(self.bn5(self.e5(h4)))
-        print('encoder last layer', h5.shape)
         h5 = h5.view(-1, self.ndf*8*4)
 
         return self.fc1(h5)
 
     def decode(self, z):
         h1 = self.relu(self.d1(z))
-        print('decoder h1 shape', h1.shape)
         h1 = h1.view(-1, self.ngf*2, 4, 4)
         h2 = self.leakyrelu(self.bn6(self.d2(self.pd1(self.up1(h1)))))
-        print('decoder h2 shape', h2.shape)
         h3 = self.leakyrelu(self.bn7(self.d3(self.pd2(self.up2(h2)))))
         h4 = self.leakyrelu(self.bn8(self.d4(self.pd3(self.up3(h3)))))
         h5 = self.leakyrelu(self.bn9(self.d5(self.pd4(self.up4(h4)))))
-        print('decoder h5 shape', h5.shape)
-        print('decoder d6 shape', self.d6(self.pd5(self.up5(h5))).shape)
 
         return self.sigmoid(self.d6(self.pd5(self.up5(h5))))
 
@@ -97,19 +92,19 @@ class AEBase(nn.Module):
         return res
 
 class AECurve(nn.Module):
-    def __init__(self, nc, ngf, ndf,  bottleneck = 128, fix_start=True, fix_end=True, num_bends=3):
+    def __init__(self, nc, ngf, ndf,  bottleneck = 128, fix_points=None, num_bends=3):
         super(AECurve, self).__init__()
 
-        self.fix_points = [fix_start] + [False] * (num_bends - 2) + [fix_end] # weight freezing 
+        self.fix_points = fix_points#[fix_start] + [False] * (num_bends - 2) + [fix_end] # weight freezing 
         self.nc = nc
         self.ngf = ngf
         self.ndf = ndf
 
         self.e1 = curves.Conv2d(in_channels=nc, out_channels=ndf, kernel_size=4, fix_points=self.fix_points, stride=2, padding=1)
-        self.bn1 = curves.BatchNorm2d(ndf)
+        self.bn1 = curves.BatchNorm2d(ndf, fix_points=self.fix_points)
 
         self.e2 = curves.Conv2d(in_channels=ndf, out_channels=2 * ndf, kernel_size=4, fix_points=self.fix_points, stride=2, padding=1)
-        self.bn2 = curves.BatchNorm2d(2 * ndf)
+        self.bn2 = curves.BatchNorm2d(2 * ndf, fix_points=self.fix_points)
 
         self.e3 = curves.Conv2d(in_channels=2 * ndf, out_channels=4 * ndf, kernel_size=4, fix_points=self.fix_points, stride=2, padding=1)
         self.bn3 = curves.BatchNorm2d(4 * ndf, fix_points=self.fix_points)
@@ -120,33 +115,33 @@ class AECurve(nn.Module):
         self.e5 = curves.Conv2d(in_channels=8 * ndf, out_channels=8 * ndf, kernel_size=4, fix_points=self.fix_points, stride=2, padding=1)
         self.bn5 = curves.BatchNorm2d(8 * ndf, fix_points=self.fix_points)
 
-        self.fc1 = curves.Linear(4 * 4 * 8 * ndf, bottleneck, fix_points=self.fix_points)
+        self.fc1 = curves.Linear(4 * 8 * ndf, bottleneck, fix_points=self.fix_points)
 
         # decoder
-        self.d1 = curves.Linear(bottleneck, ngf * 8 * 2 * 4 * 4, fix_points=self.fix_points)
+        self.d1 = curves.Linear(bottleneck, ngf * 8 * 4, fix_points=self.fix_points)
 
         self.up1 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd1 = nn.ReplicationPad2d(1)
-        self.d2 = curves.Conv2d(in_channels=8 * 2 * ngf, out_channels=8 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn5 = curves.BatchNorm2d(8 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.d2 = curves.Conv2d(in_channels=2 * ngf, out_channels=8 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
+        self.bn6 = curves.BatchNorm2d(8 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up2 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd2 = nn.ReplicationPad2d(1)
         self.d3 = curves.Conv2d(in_channels=8 * ngf, out_channels=4 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn7 = curves.BatchNorm2d(4 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn7 = curves.BatchNorm2d(4 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up3 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd3 = nn.ReplicationPad2d(1)
         self.d4 = curves.Conv2d(in_channels=4 * ngf, out_channels=2 * ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn8 = curves.BatchNorm2d(2 * ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn8 = curves.BatchNorm2d(2 * ngf, fix_points=self.fix_points, eps=1.e-3)
 
         self.up4 = nn.UpsamplingNearest2d(scale_factor=2)
         self.pd4 = nn.ReplicationPad2d(1)
         self.d5 = curves.Conv2d(in_channels=2 * ngf, out_channels=ngf, kernel_size=3, fix_points=self.fix_points, stride=1)
-        self.bn8 = curves.BatchNorm2d(ndf, fix_points=self.fix_points, eps=1.e-3)
+        self.bn9 = curves.BatchNorm2d(ngf, fix_points=self.fix_points, eps=1.e-3)
 
-        self.up5 = UpsamplingNearest2d(scale_factor=2)
-        self.pd5 = ReplicationPad2d(1)
+        self.up5 = nn.UpsamplingNearest2d(scale_factor=1)
+        self.pd5 = nn.ReplicationPad2d(1)
         self.d6 = curves.Conv2d(in_channels=ngf, out_channels=nc, kernel_size=3, fix_points=self.fix_points, stride=1)
 
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -173,13 +168,13 @@ class AECurve(nn.Module):
         h3 = self.leakyrelu(self.bn3(self.e3(h2, coeffs_t), coeffs_t))
         h4 = self.leakyrelu(self.bn4(self.e4(h3, coeffs_t), coeffs_t))
         h5 = self.leakyrelu(self.bn5(self.e5(h4, coeffs_t), coeffs_t))
-        h5 = h5.view(-1, self.ndf*8*4*4)
-
+        h5 = h5.view(-1, self.ndf*8*4)
+        
         return self.fc1(h5, coeffs_t)
 
     def decode(self, z, coeffs_t):
         h1 = self.relu(self.d1(z, coeffs_t))
-        h1 = h1.view(-1, self.ngf*8*2, 4, 4)
+        h1 = h1.view(-1, self.ngf*2, 4, 4)
         h2 = self.leakyrelu(self.bn6(self.d2(self.pd1(self.up1(h1)), coeffs_t), coeffs_t))
         h3 = self.leakyrelu(self.bn7(self.d3(self.pd2(self.up2(h2)), coeffs_t), coeffs_t))
         h4 = self.leakyrelu(self.bn8(self.d4(self.pd3(self.up3(h3)), coeffs_t), coeffs_t))
